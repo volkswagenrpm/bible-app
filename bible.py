@@ -34,34 +34,29 @@ except Exception as e:
 
 ORTHODOX_LANGUAGES = {
     "English (Orthodox - KJV with Deuterocanon)": {
+        "provider": "wldeh",
         "version": "en-kjv",
         "flag": "🇬🇧",
-        "notes": "Full 80-book canon available in this source.",
+        "notes": "Full 80-book canon available in this source (public data via wldeh/bible-api).",
     },
-    "Português (Brasil - BLT)": {
-        "version": "pt-BR-blt",
+    "Português (João Ferreira de Almeida)": {
+        "provider": "bible_api",
+        "version": "almeida",
         "flag": "🇧🇷",
-        "notes": "This source currently includes New Testament books.",
+        "notes": "Public-domain Portuguese Almeida text.",
     },
     "العربية (Arabic - ONAV 2012)": {
+        "provider": "wldeh",
         "version": "arb-kehm",
         "flag": "🇸🇦",
-        "notes": "Arabic text source available online.",
+        "notes": "Arabic official text source available online.",
     },
 }
 
 DEFAULT_GUI_LANGUAGE = "English (Orthodox - KJV with Deuterocanon)"
 GITHUB_CONTENTS_BASE = "https://api.github.com/repos/wldeh/bible-api/contents/bibles"
 BIBLE_TEXT_BASE = "https://cdn.jsdelivr.net/gh/wldeh/bible-api/bibles"
-
-# Arabic uses a separate public domain source
-ARABIC_VERSES = [
-    ("يوحنا 3:16", "لأنه هكذا أحب الله العالم حتى بذل ابنه الوحيد، لكي لا يهلك كل من يؤمن به، بل تكون له الحياة الأبدية."),
-    ("مزامير 23:1", "الرَّبُّ رَاعِيَّ فَلاَ يُعْوِزُنِي شَيْءٌ."),
-    ("أمثال 3:5-6", "اتَّكِلْ عَلَى الرَّبِّ بِكُلِّ قَلْبِكَ، وَلاَ تَسْتَنِدْ إِلَى فَهْمِكَ الْخَاصِّ. فِي كُلِّ طُرُقِكَ اعْتَرِفْ بِهِ، وَهُوَ يُقَوِّمُ سُبُلَكَ."),
-    ("فيلبي 4:13", "أَسْتَطِيعُ كُلَّ شَيْءٍ فِي الْمَسِيحِ الَّذِي يُقَوِّينِي."),
-    ("إرميا 29:11", "لأَنِّي أَعْرِفُ الأَفْكَارَ الَّتِي أَنَا مُفَكِّرٌ بِهَا عَنْكُمْ، يَقُولُ الرَّبُّ، أَفْكَارَ سَلاَمٍ لاَ شَرٍّ، لأُعْطِيَكُمْ آخِرَةً وَرَجَاءً."),
-]
+BIBLE_API_DATA_BASE = "https://bible-api.com/data"
 
 RANDOM_VERSES = [
     "John 3:16", "Psalms 23:1", "Proverbs 3:5", "Romans 8:28",
@@ -92,7 +87,7 @@ def fetch_version_books(version: str) -> dict:
         if not isinstance(data, list):
             return {"error": "Unexpected response while loading books."}
         books = [item["name"] for item in data if item.get("type") == "dir" and item.get("name")]
-        return {"books": sorted(books, key=lambda s: s.lower())}
+        return {"books": books}
     except Exception as e:
         return {"error": f"Could not load books: {e}"}
 
@@ -144,6 +139,62 @@ def fetch_chapter_text(version: str, book_slug: str, chapter: int) -> dict:
         return {"error": f"Could not load chapter text: {e}"}
 
 
+def fetch_bible_api_books(translation: str) -> dict:
+    try:
+        url = f"{BIBLE_API_DATA_BASE}/{_q(translation)}"
+        data = _api_get_json(url)
+        books = data.get("books", [])
+        out = []
+        for row in books:
+            book_id = row.get("id")
+            name = row.get("name")
+            if book_id and name:
+                out.append({"id": book_id, "name": name})
+        return {"books": out}
+    except Exception as e:
+        return {"error": f"Could not load books: {e}"}
+
+
+def fetch_bible_api_book_chapters(translation: str, book_id: str) -> dict:
+    try:
+        url = f"{BIBLE_API_DATA_BASE}/{_q(translation)}/{_q(book_id)}"
+        data = _api_get_json(url)
+        chapters = []
+        for row in data.get("chapters", []):
+            chapter = row.get("chapter")
+            if isinstance(chapter, int):
+                chapters.append(chapter)
+        chapters.sort()
+        return {"chapters": chapters}
+    except Exception as e:
+        return {"error": f"Could not load chapter list: {e}"}
+
+
+def fetch_bible_api_chapter_text(translation: str, book_id: str, chapter: int) -> dict:
+    try:
+        url = f"{BIBLE_API_DATA_BASE}/{_q(translation)}/{_q(book_id)}/{chapter}"
+        data = _api_get_json(url)
+        verse_rows = data.get("verses", [])
+        verses = []
+        for i, row in enumerate(verse_rows, start=1):
+            verses.append({
+                "book_name": row.get("book", book_id),
+                "chapter": int(row.get("chapter", chapter)),
+                "verse": int(row.get("verse", i)),
+                "text": str(row.get("text", "")).strip(),
+            })
+        ref_book = verse_rows[0].get("book", book_id) if verse_rows else book_id
+        joined_text = " ".join(v["text"] for v in verses).strip()
+        return {
+            "reference": f"{ref_book} {chapter}",
+            "text": joined_text,
+            "translation": translation,
+            "verses": verses,
+        }
+    except Exception as e:
+        return {"error": f"Could not load chapter text: {e}"}
+
+
 def format_book_label(book_slug: str) -> str:
     """Convert ASCII slugs like '1maccabees' to readable labels for the UI."""
     if any(ord(ch) > 127 for ch in book_slug):
@@ -184,6 +235,36 @@ def fetch_verse(reference: str, translation: str = "kjv") -> dict:
 def get_random_verse(translation: str = "kjv") -> dict:
     ref = random.choice(RANDOM_VERSES)
     return fetch_verse(ref, translation)
+
+
+def get_random_verse_from_wldeh(version: str) -> dict:
+    books_info = fetch_version_books(version)
+    if "error" in books_info:
+        return books_info
+    books = books_info.get("books", [])
+    if not books:
+        return {"error": f"No books available for {version}."}
+    book_slug = random.choice(books)
+    chapters_info = fetch_book_chapters(version, book_slug)
+    if "error" in chapters_info:
+        return chapters_info
+    chapters = chapters_info.get("chapters", [])
+    if not chapters:
+        return {"error": f"No chapters available for {book_slug} ({version})."}
+    chapter = random.choice(chapters)
+    chapter_data = fetch_chapter_text(version, book_slug, chapter)
+    if "error" in chapter_data:
+        return chapter_data
+    verses = chapter_data.get("verses", [])
+    if not verses:
+        return {"error": "No verses found in random chapter."}
+    verse = random.choice(verses)
+    return {
+        "reference": f"{verse.get('book_name', book_slug)} {verse.get('chapter', chapter)}:{verse.get('verse', '?')}",
+        "text": verse.get("text", "").strip(),
+        "translation": version,
+        "verses": [verse],
+    }
 
 
 # ─────────────────────────────────────────────
@@ -259,12 +340,8 @@ def terminal_mode(args):
         return
 
     if args[0] == "--arabic":
-        ref, text = random.choice(ARABIC_VERSES)
-        print()
-        print(c("gold", "  ✝  ") + c("bold", ref) + c("dim", "  [عربي]"))
-        print(c("gray", "  " + "─" * 50))
-        print(c("blue", "  " + text))
-        print()
+        print(c("gray", "  Fetching a random Arabic verse..."))
+        print_verse(get_random_verse_from_wldeh("arb-kehm"))
         return
 
     # Check for -l / --language flag
@@ -445,6 +522,42 @@ class BibleApp(tk.Tk):
         self.current_translation.set(config["version"])
         self._load_books_for_current_language()
 
+    def _current_language_config(self):
+        name = self.current_lang_name.get()
+        return ORTHODOX_LANGUAGES.get(name, ORTHODOX_LANGUAGES[DEFAULT_GUI_LANGUAGE])
+
+    def _fetch_books_for_current_language(self, version: str):
+        config = self._current_language_config()
+        provider = config.get("provider", "wldeh")
+        if provider == "bible_api":
+            data = fetch_bible_api_books(version)
+            if "error" in data:
+                return data
+            books = data.get("books", [])
+            slugs = [b["id"] for b in books]
+            labels = [b["name"] for b in books]
+            return {"slugs": slugs, "labels": labels}
+        data = fetch_version_books(version)
+        if "error" in data:
+            return data
+        slugs = data.get("books", [])
+        labels = [format_book_label(slug) for slug in slugs]
+        return {"slugs": slugs, "labels": labels}
+
+    def _fetch_chapters_for_current_language(self, version: str, book_slug: str):
+        config = self._current_language_config()
+        provider = config.get("provider", "wldeh")
+        if provider == "bible_api":
+            return fetch_bible_api_book_chapters(version, book_slug)
+        return fetch_book_chapters(version, book_slug)
+
+    def _fetch_chapter_text_for_current_language(self, version: str, book_slug: str, chapter: int):
+        config = self._current_language_config()
+        provider = config.get("provider", "wldeh")
+        if provider == "bible_api":
+            return fetch_bible_api_chapter_text(version, book_slug, chapter)
+        return fetch_chapter_text(version, book_slug, chapter)
+
     def _on_book_change(self, _event=None):
         version = self.current_translation.get()
         book_display = self.current_book.get().strip()
@@ -454,7 +567,7 @@ class BibleApp(tk.Tk):
         cache_key = (version, book_slug)
         chapter_info = self.chapters_cache.get(cache_key)
         if chapter_info is None:
-            chapter_info = fetch_book_chapters(version, book_slug)
+            chapter_info = self._fetch_chapters_for_current_language(version, book_slug)
             self.chapters_cache[cache_key] = chapter_info
 
         if "error" in chapter_info:
@@ -491,7 +604,7 @@ class BibleApp(tk.Tk):
         self.chapter_verses = []
         self.status_var.set(f"Loading {book_display} {chapter}...")
         self.update()
-        data = fetch_chapter_text(version, book_slug, chapter)
+        data = self._fetch_chapter_text_for_current_language(version, book_slug, chapter)
         if "error" in data:
             self.status_var.set("Could not load chapter.")
             self.ref_label.config(text="⚠ Error")
@@ -539,7 +652,7 @@ class BibleApp(tk.Tk):
         if books_info is None:
             self.status_var.set("Loading books...")
             self.update()
-            books_info = fetch_version_books(version)
+            books_info = self._fetch_books_for_current_language(version)
             self.books_cache[version] = books_info
 
         if "error" in books_info:
@@ -548,8 +661,8 @@ class BibleApp(tk.Tk):
             self.current_book.set("")
             return
 
-        slugs = books_info.get("books", [])
-        labels = [format_book_label(slug) for slug in slugs]
+        slugs = books_info.get("slugs", [])
+        labels = books_info.get("labels", [])
         self.book_display_to_slug = {label: slug for label, slug in zip(labels, slugs)}
         self.book_combo["values"] = labels
         if not labels:
@@ -582,10 +695,10 @@ class BibleApp(tk.Tk):
     def load_random(self):
         version = self.current_translation.get()
         books_info = self.books_cache.get(version)
-        if not books_info or "error" in books_info or not books_info.get("books"):
+        if not books_info or "error" in books_info or not books_info.get("slugs"):
             self._load_books_for_current_language()
             books_info = self.books_cache.get(version, {})
-        slugs = books_info.get("books", [])
+        slugs = books_info.get("slugs", [])
         if not slugs:
             self.status_var.set("Could not load books for random verse.")
             return
@@ -594,7 +707,7 @@ class BibleApp(tk.Tk):
         cache_key = (version, book_slug)
         chapter_info = self.chapters_cache.get(cache_key)
         if chapter_info is None:
-            chapter_info = fetch_book_chapters(version, book_slug)
+            chapter_info = self._fetch_chapters_for_current_language(version, book_slug)
             self.chapters_cache[cache_key] = chapter_info
         chapters = chapter_info.get("chapters", [])
         if not chapters:
@@ -608,7 +721,7 @@ class BibleApp(tk.Tk):
         self.current_chapter.set(chapter)
         self.status_var.set("Fetching a random verse…")
         self.update()
-        chapter_data = fetch_chapter_text(version, book_slug, chapter)
+        chapter_data = self._fetch_chapter_text_for_current_language(version, book_slug, chapter)
         if "error" in chapter_data:
             self._show_verse(chapter_data)
             return
@@ -641,7 +754,7 @@ class BibleApp(tk.Tk):
             self._show_verse({"error": "Use format like John 3:16 or John 3"})
             return
         book_slug, chapter, verse_no = parsed
-        chapter_data = fetch_chapter_text(trans, book_slug, chapter)
+        chapter_data = self._fetch_chapter_text_for_current_language(trans, book_slug, chapter)
         if "error" in chapter_data:
             self._show_verse(chapter_data)
             return

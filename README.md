@@ -56,8 +56,8 @@ Click **Bible** in your start menu, or type `bible --gui` in terminal.
 | Flag | Source | Version ID | Scope in source |
 |------|--------|------------|-----------------|
 | 🇬🇧 | English (Orthodox - KJV with Deuterocanon) | `en-kjv` | Full 80-book canon in this dataset |
-| 🇧🇷 | Português (Brasil - BLT) | `pt-BR-blt` | NT in current upstream dataset |
-| 🇸🇦 | العربية (Arabic - ONAV 2012) | `arb-kehm` | Bible in current upstream dataset |
+| 🇧🇷 | Português (João Ferreira de Almeida) | `almeida` | Public-domain Portuguese Bible |
+| 🇸🇦 | العربية (Arabic - ONAV 2012) | `arb-kehm` | Arabic Bible source |
 
 ---
 
@@ -69,6 +69,7 @@ Click **Bible** in your start menu, or type `bible --gui` in terminal.
 | `bible.desktop` | Makes the app appear in your start menu |
 | `install.sh` | One-command installer |
 | `assets/bible-app.svg` | App icon used in the desktop menu |
+| `SOURCES.md` | Source and licensing notes for bundled providers |
 
 ---
 
