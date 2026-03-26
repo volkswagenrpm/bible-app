@@ -9,10 +9,22 @@ import sys
 import os
 import random
 import json
+import traceback
 import urllib.request
 import urllib.parse
-import tkinter as tk
-from tkinter import ttk, messagebox, font as tkfont
+
+try:
+    import tkinter as tk
+    from tkinter import ttk, messagebox, font as tkfont
+    TK_AVAILABLE = True
+    TK_IMPORT_ERROR = None
+except Exception as e:
+    tk = None
+    ttk = None
+    messagebox = None
+    tkfont = None
+    TK_AVAILABLE = False
+    TK_IMPORT_ERROR = e
 
 # ─────────────────────────────────────────────
 #  SOURCES
@@ -697,8 +709,23 @@ class BibleApp(tk.Tk):
 
 
 def gui_mode():
-    app = BibleApp()
-    app.mainloop()
+    if not TK_AVAILABLE:
+        print("GUI could not start because tkinter is not available.")
+        print(f"Details: {TK_IMPORT_ERROR}")
+        print("On Arch Linux, install it with: sudo pacman -S --needed tk")
+        return
+
+    log_path = os.path.expanduser("~/.cache/bible-app.log")
+    try:
+        app = BibleApp()
+        app.mainloop()
+    except Exception:
+        os.makedirs(os.path.dirname(log_path), exist_ok=True)
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write("\n=== Bible App Crash ===\n")
+            f.write(traceback.format_exc())
+        print("Bible GUI crashed. Error saved to:")
+        print(log_path)
 
 
 # ─────────────────────────────────────────────
