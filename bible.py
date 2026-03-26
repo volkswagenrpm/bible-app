@@ -15,30 +15,32 @@ import tkinter as tk
 from tkinter import ttk, messagebox, font as tkfont
 
 # ─────────────────────────────────────────────
-#  BIBLE API — uses api.esv.org for English and
-#  scripture.api.bible for other languages via
-#  bible-api.com (free, no key needed)
+#  SOURCES
+#  - GUI: wldeh/bible-api JSON dataset via jsDelivr + GitHub contents API
+#  - Terminal quick lookup: bible-api.com endpoint
 # ─────────────────────────────────────────────
 
-LANGUAGES = {
-    "English (KJV)":        {"id": "kjv",          "flag": "🇺🇸"},
-    "English (NIV)":        {"id": "web",           "flag": "🇺🇸"},
-    "Português (ARC)":      {"id": "almeida",       "flag": "🇧🇷"},
-    "Português (NVI-PT)":   {"id": "nvi",           "flag": "🇵🇹"},
-    "Español":              {"id": "rvr1960",        "flag": "🇪🇸"},
-    "Français":             {"id": "ls1910",         "flag": "🇫🇷"},
-    "Deutsch":              {"id": "luther1912",     "flag": "🇩🇪"},
-    "Italiano":             {"id": "giovanni",       "flag": "🇮🇹"},
-    "Română":               {"id": "cornilescu",     "flag": "🇷🇴"},
-    "Nederlands":           {"id": "statenvertaling","flag": "🇳🇱"},
-    "Русский":              {"id": "sinodal",        "flag": "🇷🇺"},
-    "中文 (Chinese CUV)":   {"id": "cunpss-shangdi", "flag": "🇨🇳"},
-    "한국어 (Korean)":      {"id": "korean",         "flag": "🇰🇷"},
-    "Tagalog":              {"id": "tagalog",        "flag": "🇵🇭"},
-    "Swahili":              {"id": "swahili",        "flag": "🇹🇿"},
-    "Bislama":              {"id": "bislama",        "flag": "🇻🇺"},
-    "Tok Pisin":            {"id": "tok-pisin",      "flag": "🇵🇬"},
+ORTHODOX_LANGUAGES = {
+    "English (Orthodox - KJV with Deuterocanon)": {
+        "version": "en-kjv",
+        "flag": "🇬🇧",
+        "notes": "Full 80-book canon available in this source.",
+    },
+    "Português (Brasil - BLT)": {
+        "version": "pt-BR-blt",
+        "flag": "🇧🇷",
+        "notes": "This source currently includes New Testament books.",
+    },
+    "العربية (Arabic - ONAV 2012)": {
+        "version": "arb-kehm",
+        "flag": "🇸🇦",
+        "notes": "Arabic text source available online.",
+    },
 }
+
+DEFAULT_GUI_LANGUAGE = "English (Orthodox - KJV with Deuterocanon)"
+GITHUB_CONTENTS_BASE = "https://api.github.com/repos/wldeh/bible-api/contents/bibles"
+BIBLE_TEXT_BASE = "https://cdn.jsdelivr.net/gh/wldeh/bible-api/bibles"
 
 # Arabic uses a separate public domain source
 ARABIC_VERSES = [
@@ -60,21 +62,88 @@ RANDOM_VERSES = [
     "Acts 2:38", "Romans 3:23", "Romans 5:8", "1 John 4:8",
 ]
 
-BOOK_CHAPTERS = {
-    "Genesis": 50, "Exodus": 40, "Leviticus": 27, "Numbers": 36, "Deuteronomy": 34,
-    "Joshua": 24, "Judges": 21, "Ruth": 4, "1 Samuel": 31, "2 Samuel": 24,
-    "1 Kings": 22, "2 Kings": 25, "1 Chronicles": 29, "2 Chronicles": 36, "Ezra": 10,
-    "Nehemiah": 13, "Esther": 10, "Job": 42, "Psalms": 150, "Proverbs": 31,
-    "Ecclesiastes": 12, "Song of Solomon": 8, "Isaiah": 66, "Jeremiah": 52, "Lamentations": 5,
-    "Ezekiel": 48, "Daniel": 12, "Hosea": 14, "Joel": 3, "Amos": 9,
-    "Obadiah": 1, "Jonah": 4, "Micah": 7, "Nahum": 3, "Habakkuk": 3,
-    "Zephaniah": 3, "Haggai": 2, "Zechariah": 14, "Malachi": 4, "Matthew": 28,
-    "Mark": 16, "Luke": 24, "John": 21, "Acts": 28, "Romans": 16,
-    "1 Corinthians": 16, "2 Corinthians": 13, "Galatians": 6, "Ephesians": 6, "Philippians": 4,
-    "Colossians": 4, "1 Thessalonians": 5, "2 Thessalonians": 3, "1 Timothy": 6, "2 Timothy": 4,
-    "Titus": 3, "Philemon": 1, "Hebrews": 13, "James": 5, "1 Peter": 5,
-    "2 Peter": 3, "1 John": 5, "2 John": 1, "3 John": 1, "Jude": 1, "Revelation": 22
-}
+def _api_get_json(url: str) -> dict:
+    req = urllib.request.Request(url, headers={"User-Agent": "BibleApp/1.0"})
+    with urllib.request.urlopen(req, timeout=12) as resp:
+        return json.loads(resp.read().decode())
+
+
+def _q(segment: str) -> str:
+    return urllib.parse.quote(str(segment), safe="")
+
+
+def fetch_version_books(version: str) -> dict:
+    """List all books available in a specific translation/version."""
+    try:
+        url = f"{GITHUB_CONTENTS_BASE}/{_q(version)}/books"
+        data = _api_get_json(url)
+        if not isinstance(data, list):
+            return {"error": "Unexpected response while loading books."}
+        books = [item["name"] for item in data if item.get("type") == "dir" and item.get("name")]
+        return {"books": sorted(books, key=lambda s: s.lower())}
+    except Exception as e:
+        return {"error": f"Could not load books: {e}"}
+
+
+def fetch_book_chapters(version: str, book_slug: str) -> dict:
+    """List available chapter numbers for a given book."""
+    try:
+        url = f"{GITHUB_CONTENTS_BASE}/{_q(version)}/books/{_q(book_slug)}/chapters"
+        data = _api_get_json(url)
+        if not isinstance(data, list):
+            return {"error": "Unexpected response while loading chapters."}
+        chapters = []
+        for item in data:
+            name = item.get("name", "")
+            if not name.endswith(".json"):
+                continue
+            stem = name[:-5]
+            if stem.isdigit():
+                chapters.append(int(stem))
+        chapters.sort()
+        return {"chapters": chapters}
+    except Exception as e:
+        return {"error": f"Could not load chapter list: {e}"}
+
+
+def fetch_chapter_text(version: str, book_slug: str, chapter: int) -> dict:
+    """Fetch chapter verses from the wldeh/bible-api JSON dataset."""
+    try:
+        url = f"{BIBLE_TEXT_BASE}/{_q(version)}/books/{_q(book_slug)}/chapters/{chapter}.json"
+        data = _api_get_json(url)
+        verse_rows = data.get("data", [])
+        verses = []
+        for i, row in enumerate(verse_rows, start=1):
+            verses.append({
+                "book_name": row.get("book", book_slug),
+                "chapter": int(row.get("chapter", chapter)),
+                "verse": int(row.get("verse", i)),
+                "text": str(row.get("text", "")).strip(),
+            })
+        ref_book = verse_rows[0].get("book", book_slug) if verse_rows else book_slug
+        joined_text = " ".join(v["text"] for v in verses).strip()
+        return {
+            "reference": f"{ref_book} {chapter}",
+            "text": joined_text,
+            "translation": version,
+            "verses": verses,
+        }
+    except Exception as e:
+        return {"error": f"Could not load chapter text: {e}"}
+
+
+def format_book_label(book_slug: str) -> str:
+    """Convert ASCII slugs like '1maccabees' to readable labels for the UI."""
+    if any(ord(ch) > 127 for ch in book_slug):
+        return book_slug
+    slug = book_slug.replace("_", " ").replace("-", " ").strip()
+    if slug and slug[0].isdigit() and len(slug) > 1 and slug[1].isalpha():
+        slug = f"{slug[0]} {slug[1:]}"
+    return slug.title()
+
+
+def normalize_book_key(text: str) -> str:
+    return "".join(ch for ch in text.lower() if ch.isalnum())
 
 
 def fetch_verse(reference: str, translation: str = "kjv") -> dict:
@@ -172,9 +241,8 @@ def terminal_mode(args):
 
     if args[0] == "--languages":
         print(c("green", "  Available translations:"))
-        for name, info in LANGUAGES.items():
-            print(f"    {info['flag']}  {c('gold', info['id']):30s}  {c('gray', name)}")
-        print(c("gray", "\n  Arabic is built-in (offline). Use: bible --arabic"))
+        for name, info in ORTHODOX_LANGUAGES.items():
+            print(f"    {info['flag']}  {c('gold', info['version']):30s}  {c('gray', name)}")
         print()
         return
 
@@ -232,13 +300,16 @@ class BibleApp(tk.Tk):
             self.btn_font    = tkfont.Font(size=10, weight="bold")
             self.small_font  = tkfont.Font(size=9)
 
-        self.current_translation = tk.StringVar(value="kjv")
-        self.current_lang_name   = tk.StringVar(value="English (KJV)")
+        self.current_translation = tk.StringVar(value=ORTHODOX_LANGUAGES[DEFAULT_GUI_LANGUAGE]["version"])
+        self.current_lang_name   = tk.StringVar(value=DEFAULT_GUI_LANGUAGE)
         self.search_var          = tk.StringVar()
-        self.current_book        = tk.StringVar(value="John")
-        self.current_chapter     = tk.IntVar(value=3)
+        self.current_book        = tk.StringVar(value="")
+        self.current_chapter     = tk.IntVar(value=1)
         self.verse_history       = []
         self.chapter_verses      = []
+        self.books_cache         = {}
+        self.chapters_cache      = {}
+        self.book_display_to_slug = {}
 
         self._build_ui()
         self.after(200, self.load_random)
@@ -257,9 +328,9 @@ class BibleApp(tk.Tk):
         lang_frame.pack(side="right", padx=20)
         tk.Label(lang_frame, text="Language:", bg="#16213e", fg="#aaaacc",
                  font=self.small_font).pack(side="left", padx=(0,4))
-        lang_names = list(LANGUAGES.keys()) + ["العربية (Arabic)"]
+        lang_names = list(ORTHODOX_LANGUAGES.keys())
         self.lang_combo = ttk.Combobox(lang_frame, textvariable=self.current_lang_name,
-                                       values=lang_names, width=20, state="readonly",
+                                       values=lang_names, width=42, state="readonly",
                                        font=self.small_font)
         self.lang_combo.pack(side="left")
         self.lang_combo.bind("<<ComboboxSelected>>", self._on_lang_change)
@@ -299,7 +370,7 @@ class BibleApp(tk.Tk):
         tk.Label(browse_header, text="Chapter:", bg="#0a2342", fg="#dce0ff",
                  font=self.small_font).pack(side="left", padx=(6, 4))
         self.chapter_spin = tk.Spinbox(
-            browse_header, from_=1, to=150, textvariable=self.current_chapter,
+            browse_header, from_=1, to=200, textvariable=self.current_chapter,
             width=5, font=self.small_font, command=self.load_chapter
         )
         self.chapter_spin.pack(side="left", padx=(0, 6))
@@ -352,52 +423,63 @@ class BibleApp(tk.Tk):
                               anchor="w", padx=12, pady=4)
         status_bar.pack(fill="x", side="bottom")
 
-        self._on_book_change()
+        self._load_books_for_current_language()
 
     # ── Actions ─────────────────────────────────
 
     def _on_lang_change(self, _event=None):
         name = self.current_lang_name.get()
-        if name == "العربية (Arabic)":
-            self.current_translation.set("arabic")
-        else:
-            self.current_translation.set(LANGUAGES.get(name, {}).get("id", "kjv"))
-        self.load_chapter()
+        config = ORTHODOX_LANGUAGES.get(name, ORTHODOX_LANGUAGES[DEFAULT_GUI_LANGUAGE])
+        self.current_translation.set(config["version"])
+        self._load_books_for_current_language()
 
     def _on_book_change(self, _event=None):
-        book = self.current_book.get()
-        max_ch = BOOK_CHAPTERS.get(book, 1)
+        version = self.current_translation.get()
+        book_display = self.current_book.get().strip()
+        book_slug = self.book_display_to_slug.get(book_display, "")
+        if not book_slug:
+            return
+        cache_key = (version, book_slug)
+        chapter_info = self.chapters_cache.get(cache_key)
+        if chapter_info is None:
+            chapter_info = fetch_book_chapters(version, book_slug)
+            self.chapters_cache[cache_key] = chapter_info
+
+        if "error" in chapter_info:
+            self.status_var.set(chapter_info["error"])
+            self.chapter_spin.config(from_=1, to=200)
+            self.current_chapter.set(1)
+            return
+
+        chapters = chapter_info.get("chapters", [])
+        if not chapters:
+            self.chapter_spin.config(from_=1, to=200)
+            self.current_chapter.set(1)
+            return
+
+        min_ch, max_ch = chapters[0], chapters[-1]
         current = self.current_chapter.get()
-        if current < 1:
-            current = 1
+        if current < min_ch:
+            current = min_ch
         if current > max_ch:
             current = max_ch
+        self.chapter_spin.config(from_=min_ch, to=max_ch)
         self.current_chapter.set(current)
-        self.chapter_spin.config(to=max_ch)
         self.load_chapter()
 
     def load_chapter(self):
-        book = self.current_book.get().strip()
+        version = self.current_translation.get()
+        book_display = self.current_book.get().strip()
+        book_slug = self.book_display_to_slug.get(book_display, "")
         chapter = self.current_chapter.get()
-        if not book:
+        if not book_slug:
             return
 
         self.verse_list.delete(0, "end")
         self.chapter_verses = []
-        trans = self.current_translation.get()
-
-        if trans == "arabic":
-            self.status_var.set("Arabic browse mode is offline only (limited sample verses).")
-            self.ref_label.config(text=f"{book} {chapter} [عربي]")
-            self.verse_text.config(state="normal")
-            self.verse_text.delete("1.0", "end")
-            self.verse_text.insert("end", "Arabic browse mode is limited offline.\nUse search for included Arabic verses.")
-            self.verse_text.config(state="disabled")
-            return
-
-        self.status_var.set(f"Loading {book} {chapter}...")
+        self.status_var.set(f"Loading {book_display} {chapter}...")
         self.update()
-        data = fetch_verse(f"{book} {chapter}", trans)
+        data = fetch_chapter_text(version, book_slug, chapter)
         if "error" in data:
             self.status_var.set("Could not load chapter.")
             self.ref_label.config(text="⚠ Error")
@@ -419,7 +501,8 @@ class BibleApp(tk.Tk):
             preview = text[:72] + ("..." if len(text) > 72 else "")
             self.verse_list.insert("end", f"{number}. {preview}")
 
-        self.status_var.set(f"Loaded {book} {chapter} ({len(verses)} verses)")
+        lang_note = ORTHODOX_LANGUAGES.get(self.current_lang_name.get(), {}).get("notes", "")
+        self.status_var.set(f"Loaded {book_display} {chapter} ({len(verses)} verses) · {lang_note}")
         self.verse_list.selection_set(0)
         self._on_verse_select()
 
@@ -435,8 +518,37 @@ class BibleApp(tk.Tk):
         self._show_verse({
             "reference": ref,
             "text": text,
-            "translation": self.current_translation.get().upper()
+            "translation": self.current_translation.get()
         })
+
+    def _load_books_for_current_language(self):
+        version = self.current_translation.get()
+        books_info = self.books_cache.get(version)
+        if books_info is None:
+            self.status_var.set("Loading books...")
+            self.update()
+            books_info = fetch_version_books(version)
+            self.books_cache[version] = books_info
+
+        if "error" in books_info:
+            self.status_var.set(books_info["error"])
+            self.book_combo["values"] = []
+            self.current_book.set("")
+            return
+
+        slugs = books_info.get("books", [])
+        labels = [format_book_label(slug) for slug in slugs]
+        self.book_display_to_slug = {label: slug for label, slug in zip(labels, slugs)}
+        self.book_combo["values"] = labels
+        if not labels:
+            self.current_book.set("")
+            self.status_var.set("No books found for this language/source.")
+            return
+
+        preferred = "John" if "John" in labels else labels[0]
+        self.current_book.set(preferred)
+        self.current_chapter.set(1)
+        self._on_book_change()
 
     def _show_verse(self, data: dict):
         self.verse_text.config(state="normal")
@@ -456,14 +568,52 @@ class BibleApp(tk.Tk):
         self.verse_text.config(state="disabled")
 
     def load_random(self):
-        trans = self.current_translation.get()
+        version = self.current_translation.get()
+        books_info = self.books_cache.get(version)
+        if not books_info or "error" in books_info or not books_info.get("books"):
+            self._load_books_for_current_language()
+            books_info = self.books_cache.get(version, {})
+        slugs = books_info.get("books", [])
+        if not slugs:
+            self.status_var.set("Could not load books for random verse.")
+            return
+
+        book_slug = random.choice(slugs)
+        cache_key = (version, book_slug)
+        chapter_info = self.chapters_cache.get(cache_key)
+        if chapter_info is None:
+            chapter_info = fetch_book_chapters(version, book_slug)
+            self.chapters_cache[cache_key] = chapter_info
+        chapters = chapter_info.get("chapters", [])
+        if not chapters:
+            self.status_var.set("Could not load chapters for random verse.")
+            return
+        chapter = random.choice(chapters)
+
+        selected_label = next((label for label, slug in self.book_display_to_slug.items() if slug == book_slug), None)
+        if selected_label:
+            self.current_book.set(selected_label)
+        self.current_chapter.set(chapter)
         self.status_var.set("Fetching a random verse…")
         self.update()
-        if trans == "arabic":
-            ref, text = random.choice(ARABIC_VERSES)
-            self._show_verse({"reference": ref, "text": text, "translation": "عربي"})
-        else:
-            self._show_verse(get_random_verse(trans))
+        chapter_data = fetch_chapter_text(version, book_slug, chapter)
+        if "error" in chapter_data:
+            self._show_verse(chapter_data)
+            return
+        verses = chapter_data.get("verses", [])
+        if not verses:
+            self._show_verse({"error": "No verses found in this random chapter."})
+            return
+        self.chapter_verses = verses
+        self.verse_list.delete(0, "end")
+        for verse in verses:
+            number = verse.get("verse", "?")
+            text = verse.get("text", "").strip().replace("\n", " ")
+            preview = text[:72] + ("..." if len(text) > 72 else "")
+            self.verse_list.insert("end", f"{number}. {preview}")
+        idx = random.randrange(len(verses))
+        self.verse_list.selection_set(idx)
+        self._on_verse_select()
 
     def search_verse(self):
         ref = self.search_var.get().strip()
@@ -473,15 +623,77 @@ class BibleApp(tk.Tk):
         trans = self.current_translation.get()
         self.status_var.set(f"Looking up {ref}…")
         self.update()
-        if trans == "arabic":
-            # Try to find in built-in Arabic, else fall back to KJV
-            for arabic_ref, arabic_text in ARABIC_VERSES:
-                if ref.lower() in arabic_ref.lower():
-                    self._show_verse({"reference": arabic_ref, "text": arabic_text, "translation": "عربي"})
-                    return
-            self._show_verse({"error": "Arabic verse not found offline. Try another reference."})
+        # Accept "Book 3:16" or "Book 3"
+        parsed = self._parse_reference(ref)
+        if not parsed:
+            self._show_verse({"error": "Use format like John 3:16 or John 3"})
+            return
+        book_slug, chapter, verse_no = parsed
+        chapter_data = fetch_chapter_text(trans, book_slug, chapter)
+        if "error" in chapter_data:
+            self._show_verse(chapter_data)
+            return
+
+        verses = chapter_data.get("verses", [])
+        self.chapter_verses = verses
+        self.verse_list.delete(0, "end")
+        for verse in verses:
+            number = verse.get("verse", "?")
+            text = verse.get("text", "").strip().replace("\n", " ")
+            preview = text[:72] + ("..." if len(text) > 72 else "")
+            self.verse_list.insert("end", f"{number}. {preview}")
+
+        selected_label = next((label for label, slug in self.book_display_to_slug.items() if slug == book_slug), None)
+        if selected_label:
+            self.current_book.set(selected_label)
+        self.current_chapter.set(chapter)
+
+        if verse_no is None:
+            if verses:
+                self.verse_list.selection_set(0)
+                self._on_verse_select()
+            return
+
+        for idx, verse in enumerate(verses):
+            if verse.get("verse") == verse_no:
+                self.verse_list.selection_set(idx)
+                self._on_verse_select()
+                return
+        self._show_verse({"error": f"Verse {verse_no} not found in {ref} for {trans}."})
+
+    def _parse_reference(self, ref: str):
+        parts = ref.rsplit(" ", 1)
+        if len(parts) != 2:
+            return None
+        book_part = parts[0].strip()
+        chapter_verse = parts[1].strip()
+        if ":" in chapter_verse:
+            ch_txt, vs_txt = chapter_verse.split(":", 1)
+            if not ch_txt.isdigit() or not vs_txt.isdigit():
+                return None
+            chapter = int(ch_txt)
+            verse = int(vs_txt)
         else:
-            self._show_verse(fetch_verse(ref, trans))
+            if not chapter_verse.isdigit():
+                return None
+            chapter = int(chapter_verse)
+            verse = None
+
+        book_slug = self._find_book_slug(book_part)
+        if not book_slug:
+            return None
+        return book_slug, chapter, verse
+
+    def _find_book_slug(self, raw_book: str) -> str:
+        key = normalize_book_key(raw_book)
+        if not key:
+            return ""
+        for label, slug in self.book_display_to_slug.items():
+            if normalize_book_key(label) == key:
+                return slug
+            if normalize_book_key(slug) == key:
+                return slug
+        return ""
 
 
 def gui_mode():

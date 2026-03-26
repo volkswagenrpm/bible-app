@@ -40,12 +40,18 @@ echo -e "${BLUE}  → Adding to app menu...${RESET}"
 mkdir -p ~/.local/share/applications
 cp bible.desktop ~/.local/share/applications/bible.desktop
 
+# 3b. Install icon
+echo -e "${BLUE}  → Installing app icon...${RESET}"
+mkdir -p ~/.local/share/icons/hicolor/scalable/apps
+cp assets/bible-app.svg ~/.local/share/icons/hicolor/scalable/apps/bible-app.svg
+
 # Update the Exec path to point to /usr/local/bin/bible
 sed -i 's|Exec=.*|Exec=bible --gui|' ~/.local/share/applications/bible.desktop
+sed -i "s|Icon=.*|Icon=${HOME}/.local/share/icons/hicolor/scalable/apps/bible-app.svg|" ~/.local/share/applications/bible.desktop
 
 # 4. Try to update icon cache
 if command -v gtk-update-icon-cache &> /dev/null; then
-    gtk-update-icon-cache -f -t ~/.local/share/icons 2>/dev/null || true
+    gtk-update-icon-cache -f -t ~/.local/share/icons/hicolor 2>/dev/null || true
 fi
 
 # 5. Refresh desktop database

@@ -1,6 +1,8 @@
 # ✝ Bible App
 
-A simple, beautiful Bible app for Linux with **Terminal Mode** and **GUI Mode**. Supports 17+ languages including English, Português, Arabic, Español, Français, and more.
+A simple Bible app for Linux with **Terminal Mode** and **GUI Mode**.
+
+The GUI now includes an **Orthodox-focused browsing mode** (book → chapter → verse list), including deuterocanonical books available in the selected source.
 
 ---
 
@@ -42,32 +44,20 @@ bible --gui
 
 Click **Bible** in your start menu, or type `bible --gui` in terminal.
 
-- Use the **dropdown** to pick your language
-- Click **🎲 Random** for a surprise verse
-- Type a reference like `John 3:16` and click **🔍 Look Up**
+- Use the **language dropdown** (Orthodox-focused sources)
+- Use **Browse** controls: pick book, chapter, then click a verse
+- Click **🎲 Random** for a random verse in the current source
+- Type `John 3:16` and click **🔍 Look Up**
 
 ---
 
-## 🌍 Supported Languages
+## 🌍 GUI Sources
 
-| Flag | Language | Translation ID |
-|------|----------|---------------|
-| 🇺🇸 | English (KJV) | `kjv` |
-| 🇺🇸 | English (WEB) | `web` |
-| 🇧🇷 | Português - Brasil (ARC) | `almeida` |
-| 🇵🇹 | Português - Portugal (NVI) | `nvi` |
-| 🇸🇦 | العربية (Arabic) | `--arabic` |
-| 🇪🇸 | Español | `rvr1960` |
-| 🇫🇷 | Français | `ls1910` |
-| 🇩🇪 | Deutsch | `luther1912` |
-| 🇮🇹 | Italiano | `giovanni` |
-| 🇷🇴 | Română | `cornilescu` |
-| 🇳🇱 | Nederlands | `statenvertaling` |
-| 🇷🇺 | Русский | `sinodal` |
-| 🇨🇳 | 中文 | `cunpss-shangdi` |
-| 🇰🇷 | 한국어 | `korean` |
-| 🇵🇭 | Tagalog | `tagalog` |
-| 🇹🇿 | Swahili | `swahili` |
+| Flag | Source | Version ID | Scope in source |
+|------|--------|------------|-----------------|
+| 🇬🇧 | English (Orthodox - KJV with Deuterocanon) | `en-kjv` | Full 80-book canon in this dataset |
+| 🇧🇷 | Português (Brasil - BLT) | `pt-BR-blt` | NT in current upstream dataset |
+| 🇸🇦 | العربية (Arabic - ONAV 2012) | `arb-kehm` | Bible in current upstream dataset |
 
 ---
 
@@ -78,6 +68,7 @@ Click **Bible** in your start menu, or type `bible --gui` in terminal.
 | `bible.py` | The whole app — terminal + GUI in one file |
 | `bible.desktop` | Makes the app appear in your start menu |
 | `install.sh` | One-command installer |
+| `assets/bible-app.svg` | App icon used in the desktop menu |
 
 ---
 
