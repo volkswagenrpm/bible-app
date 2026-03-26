@@ -33,6 +33,15 @@ bible John 3:16 -l almeida
 # Arabic 🇸🇦
 bible --arabic
 
+# List prayers
+bible --prayers
+
+# Coptic Orthodox 3 PM prayer
+bible --coptic-3pm
+
+# Specific prayer by name
+bible --prayer "The Lord's Prayer"
+
 # See all languages
 bible --languages
 
@@ -48,6 +57,7 @@ Click **Bible** in your start menu, or type `bible --gui` in terminal.
 - Use **Browse** controls: pick book, chapter, then click a verse
 - Click **🎲 Random** for a random verse in the current source
 - Type `John 3:16` and click **🔍 Look Up**
+- Use the **Prayer** dropdown (includes Coptic Orthodox Sixth Hour / 3 PM prayer)
 
 ---
 

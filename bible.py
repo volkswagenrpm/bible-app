@@ -69,6 +69,59 @@ RANDOM_VERSES = [
     "Acts 2:38", "Romans 3:23", "Romans 5:8", "1 John 4:8",
 ]
 
+PRAYERS = {
+    "Coptic Orthodox — Sixth Hour (3 PM)": """\
+O You who on the sixth hour were nailed to the Cross for us:
+put to death our sinful passions, and purify our hearts.
+
+Remember us, O Lord, when You come into Your Kingdom.
+Remember us, O Holy One, when You come into Your Kingdom.
+Remember us, O Master, when You come into Your Kingdom.
+
+Lord Jesus Christ, Son of God, have mercy on me, a sinner.
+Amen.""",
+    "The Lord's Prayer": """\
+Our Father, who art in heaven,
+hallowed be Thy name.
+Thy kingdom come,
+Thy will be done, on earth as it is in heaven.
+Give us this day our daily bread,
+and forgive us our trespasses,
+as we forgive those who trespass against us.
+And lead us not into temptation,
+but deliver us from evil. Amen.""",
+    "Jesus Prayer": "Lord Jesus Christ, Son of God, have mercy on me, a sinner.",
+    "Trisagion Prayer": "Holy God, Holy Mighty, Holy Immortal, have mercy on us.",
+    "Prayer Before Sleep": """\
+Into Your hands, O Lord, I commend my spirit.
+Guard me through the night and grant me peace.
+Forgive my sins and renew my heart for another day.
+Amen.""",
+    "Morning Offering": """\
+Lord Jesus Christ, I offer You this day:
+my thoughts, words, works, and all I am.
+Guide me in purity, love, and truth.
+Amen.""",
+    "Prayer of Thanksgiving": """\
+We thank You, our compassionate Father,
+for You have guarded us, helped us, and accepted us.
+Take us in Your holy fear and grant us Your peace.
+Amen.""",
+    "Prayer for Purity": """\
+Create in me a clean heart, O God,
+and renew a right spirit within me.
+Strengthen me to flee temptation
+and to walk in holiness before You.
+Amen.""",
+    "Prayer for Protection": """\
+O Lord, be before me and behind me,
+above me and beneath me.
+Cover me with Your mercy,
+and keep me from every evil.
+Amen.""",
+    "Prayer for Mercy": "Lord, have mercy. Christ, have mercy. Lord, have mercy.",
+}
+
 def _api_get_json(url: str) -> dict:
     req = urllib.request.Request(url, headers={"User-Agent": "BibleApp/1.0"})
     with urllib.request.urlopen(req, timeout=12) as resp:
@@ -307,6 +360,19 @@ def print_verse(verse_data: dict):
         print(c("blue", line))
     print()
 
+
+def print_prayer(prayer_name: str):
+    text = PRAYERS.get(prayer_name)
+    if not text:
+        print(c("gray", f"  ⚠  Prayer not found: {prayer_name}"))
+        return
+    print()
+    print(c("gold", "  ✝  ") + c("bold", prayer_name))
+    print(c("gray", "  " + "─" * 50))
+    for raw_line in text.splitlines():
+        print(c("blue", "  " + raw_line))
+    print()
+
 def terminal_mode(args):
     print()
     print(c("gold", "  ✝  ") + c("bold", "Bible — Word of God") + c("gray", "  (type 'bible --help' for help)"))
@@ -325,6 +391,9 @@ def terminal_mode(args):
         print(c("gray",  "    bible <reference> -l <lang>  — with language, e.g: bible John 3:16 -l almeida"))
         print(c("gray",  "    bible --gui                  — open the windowed app"))
         print(c("gray",  "    bible --languages            — list all supported languages"))
+        print(c("gray",  "    bible --prayers              — list built-in Christian prayers"))
+        print(c("gray",  "    bible --prayer \"<name>\"      — show a specific prayer"))
+        print(c("gray",  "    bible --coptic-3pm           — Coptic Orthodox Sixth Hour prayer"))
         print()
         return
 
@@ -342,6 +411,25 @@ def terminal_mode(args):
     if args[0] == "--arabic":
         print(c("gray", "  Fetching a random Arabic verse..."))
         print_verse(get_random_verse_from_wldeh("arb-kehm"))
+        return
+
+    if args[0] == "--prayers":
+        print(c("green", "  Built-in prayers:"))
+        for name in PRAYERS:
+            print(c("gray", f"    - {name}"))
+        print()
+        return
+
+    if args[0] == "--coptic-3pm":
+        print_prayer("Coptic Orthodox — Sixth Hour (3 PM)")
+        return
+
+    if args[0] == "--prayer":
+        if len(args) < 2:
+            print(c("gray", "  ⚠  Please pass a prayer name. Example: bible --prayer \"The Lord's Prayer\""))
+            return
+        prayer_name = " ".join(args[1:])
+        print_prayer(prayer_name)
         return
 
     # Check for -l / --language flag
@@ -392,6 +480,7 @@ class BibleApp(tk.Tk):
         self.current_translation = tk.StringVar(value=ORTHODOX_LANGUAGES[DEFAULT_GUI_LANGUAGE]["version"])
         self.current_lang_name   = tk.StringVar(value=DEFAULT_GUI_LANGUAGE)
         self.search_var          = tk.StringVar()
+        self.prayer_name_var     = tk.StringVar(value="Coptic Orthodox — Sixth Hour (3 PM)")
         self.current_book        = tk.StringVar(value="")
         self.current_chapter     = tk.IntVar(value=1)
         self.verse_history       = []
@@ -439,6 +528,22 @@ class BibleApp(tk.Tk):
                      "font": self.btn_font, "cursor": "hand2", "padx": 10, "pady": 4}
         tk.Button(search_frame, text="🔍 Look Up",  command=self.search_verse, **btn_style).pack(side="left", padx=4)
         tk.Button(search_frame, text="🎲 Random",   command=self.load_random,  **btn_style).pack(side="left", padx=4)
+
+        # Prayer bar
+        prayer_frame = tk.Frame(self, bg="#112a4a", pady=6, padx=16)
+        prayer_frame.pack(fill="x")
+        tk.Label(prayer_frame, text="Prayer:", bg="#112a4a", fg="#dce0ff",
+                 font=self.small_font).pack(side="left", padx=(0, 6))
+        self.prayer_combo = ttk.Combobox(
+            prayer_frame,
+            textvariable=self.prayer_name_var,
+            values=list(PRAYERS.keys()),
+            width=40,
+            state="readonly",
+            font=self.small_font
+        )
+        self.prayer_combo.pack(side="left", padx=(0, 6))
+        tk.Button(prayer_frame, text="Read Prayer", command=self.show_selected_prayer, **btn_style).pack(side="left")
 
         # Browse controls (book -> chapter -> verses)
         browse_header = tk.Frame(self, bg="#0a2342", pady=6, padx=16)
@@ -691,6 +796,18 @@ class BibleApp(tk.Tk):
             self.status_var.set(f"Loaded: {ref}  ·  {trans}")
             self.verse_history.append(data)
         self.verse_text.config(state="disabled")
+
+    def show_selected_prayer(self):
+        name = self.prayer_name_var.get().strip()
+        text = PRAYERS.get(name, "")
+        if not text:
+            self._show_verse({"error": f"Prayer not found: {name}"})
+            return
+        self._show_verse({
+            "reference": name,
+            "text": text,
+            "translation": "Prayer",
+        })
 
     def load_random(self):
         version = self.current_translation.get()
