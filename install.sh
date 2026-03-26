@@ -44,10 +44,20 @@ cp bible.desktop ~/.local/share/applications/bible.desktop
 echo -e "${BLUE}  → Installing app icon...${RESET}"
 mkdir -p ~/.local/share/icons/hicolor/scalable/apps
 cp assets/bible-app.svg ~/.local/share/icons/hicolor/scalable/apps/bible-app.svg
+mkdir -p ~/.local/share/pixmaps
+cp assets/bible-app.svg ~/.local/share/pixmaps/bible-app.svg
+
+# Optional PNG fallback for launchers that prefer bitmap icons
+mkdir -p ~/.local/share/icons/hicolor/256x256/apps
+if command -v rsvg-convert &> /dev/null; then
+    rsvg-convert -w 256 -h 256 assets/bible-app.svg -o ~/.local/share/icons/hicolor/256x256/apps/bible-app.png || true
+elif command -v inkscape &> /dev/null; then
+    inkscape assets/bible-app.svg -w 256 -h 256 -o ~/.local/share/icons/hicolor/256x256/apps/bible-app.png || true
+fi
 
 # Update the Exec path to point to /usr/local/bin/bible
 sed -i 's|Exec=.*|Exec=bible --gui|' ~/.local/share/applications/bible.desktop
-sed -i "s|Icon=.*|Icon=${HOME}/.local/share/icons/hicolor/scalable/apps/bible-app.svg|" ~/.local/share/applications/bible.desktop
+sed -i 's|Icon=.*|Icon=bible-app|' ~/.local/share/applications/bible.desktop
 
 # 4. Try to update icon cache
 if command -v gtk-update-icon-cache &> /dev/null; then

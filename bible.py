@@ -69,9 +69,28 @@ RANDOM_VERSES = [
     "Acts 2:38", "Romans 3:23", "Romans 5:8", "1 John 4:8",
 ]
 
+PRAYER_ORDER = [
+    "coptic_sixth_hour_3pm",
+    "lords_prayer",
+    "jesus_prayer",
+    "trisagion",
+    "before_sleep",
+    "morning_offering",
+    "thanksgiving",
+    "purity",
+    "protection",
+    "mercy",
+]
+
 PRAYERS = {
-    "Coptic Orthodox — Sixth Hour (3 PM)": """\
-O You who on the sixth hour were nailed to the Cross for us:
+    "coptic_sixth_hour_3pm": {
+        "title": {
+            "en": "Coptic Orthodox — Sixth Hour (3 PM)",
+            "ar": "الأجبية القبطية الأرثوذكسية — الساعة السادسة (3 مساءً)",
+            "pt": "Ortodoxa Copta — Sexta Hora (3 da tarde)",
+        },
+        "text": {
+            "en": """O You who on the sixth hour were nailed to the Cross for us:
 put to death our sinful passions, and purify our hearts.
 
 Remember us, O Lord, when You come into Your Kingdom.
@@ -80,8 +99,30 @@ Remember us, O Master, when You come into Your Kingdom.
 
 Lord Jesus Christ, Son of God, have mercy on me, a sinner.
 Amen.""",
-    "The Lord's Prayer": """\
-Our Father, who art in heaven,
+            "ar": """يا من في الساعة السادسة سُمّرت على الصليب من أجلنا:
+أمت أهواءنا الجسدية، وطهّر قلوبنا.
+
+اذكرنا يا رب متى جئت في ملكوتك.
+اذكرنا يا قدوس متى جئت في ملكوتك.
+اذكرنا يا سيد متى جئت في ملكوتك.
+
+يا رب يسوع المسيح ابن الله ارحمني أنا الخاطئ.
+آمين.""",
+            "pt": """Ó Tu que na sexta hora foste pregado na Cruz por nós:
+mata as nossas paixões pecaminosas e purifica os nossos corações.
+
+Lembra-Te de nós, Senhor, quando vieres no Teu Reino.
+Lembra-Te de nós, ó Santo, quando vieres no Teu Reino.
+Lembra-Te de nós, ó Mestre, quando vieres no Teu Reino.
+
+Senhor Jesus Cristo, Filho de Deus, tem misericórdia de mim, pecador.
+Amém.""",
+        },
+    },
+    "lords_prayer": {
+        "title": {"en": "The Lord's Prayer", "ar": "الصلاة الربانية", "pt": "Pai Nosso"},
+        "text": {
+            "en": """Our Father, who art in heaven,
 hallowed be Thy name.
 Thy kingdom come,
 Thy will be done, on earth as it is in heaven.
@@ -90,36 +131,95 @@ and forgive us our trespasses,
 as we forgive those who trespass against us.
 And lead us not into temptation,
 but deliver us from evil. Amen.""",
-    "Jesus Prayer": "Lord Jesus Christ, Son of God, have mercy on me, a sinner.",
-    "Trisagion Prayer": "Holy God, Holy Mighty, Holy Immortal, have mercy on us.",
-    "Prayer Before Sleep": """\
-Into Your hands, O Lord, I commend my spirit.
+            "ar": """أبانا الذي في السموات،
+ليتقدس اسمك.
+ليأت ملكوتك.
+لتكن مشيئتك كما في السماء كذلك على الأرض.
+خبزنا كفافنا أعطنا اليوم.
+واغفر لنا ذنوبنا كما نغفر نحن أيضًا للمذنبين إلينا.
+ولا تدخلنا في تجربة لكن نجنا من الشرير. آمين.""",
+            "pt": """Pai nosso que estais no céu,
+santificado seja o vosso nome.
+Venha a nós o vosso reino.
+Seja feita a vossa vontade, assim na terra como no céu.
+O pão nosso de cada dia nos dai hoje.
+Perdoai-nos as nossas ofensas, assim como nós perdoamos a quem nos tem ofendido.
+E não nos deixeis cair em tentação, mas livrai-nos do mal. Amém.""",
+        },
+    },
+    "jesus_prayer": {
+        "title": {"en": "Jesus Prayer", "ar": "صلاة يسوع", "pt": "Oração de Jesus"},
+        "text": {
+            "en": "Lord Jesus Christ, Son of God, have mercy on me, a sinner.",
+            "ar": "يا رب يسوع المسيح ابن الله، ارحمني أنا الخاطئ.",
+            "pt": "Senhor Jesus Cristo, Filho de Deus, tem misericórdia de mim, pecador.",
+        },
+    },
+    "trisagion": {
+        "title": {"en": "Trisagion Prayer", "ar": "صلاة التقديس الثلاثي", "pt": "Oração do Triságio"},
+        "text": {
+            "en": "Holy God, Holy Mighty, Holy Immortal, have mercy on us.",
+            "ar": "قدوس الله، قدوس القوي، قدوس الحي الذي لا يموت، ارحمنا.",
+            "pt": "Deus Santo, Forte Santo, Imortal Santo, tem misericórdia de nós.",
+        },
+    },
+    "before_sleep": {
+        "title": {"en": "Prayer Before Sleep", "ar": "صلاة قبل النوم", "pt": "Oração Antes de Dormir"},
+        "text": {
+            "en": """Into Your hands, O Lord, I commend my spirit.
 Guard me through the night and grant me peace.
 Forgive my sins and renew my heart for another day.
 Amen.""",
-    "Morning Offering": """\
-Lord Jesus Christ, I offer You this day:
-my thoughts, words, works, and all I am.
-Guide me in purity, love, and truth.
-Amen.""",
-    "Prayer of Thanksgiving": """\
-We thank You, our compassionate Father,
-for You have guarded us, helped us, and accepted us.
-Take us in Your holy fear and grant us Your peace.
-Amen.""",
-    "Prayer for Purity": """\
-Create in me a clean heart, O God,
-and renew a right spirit within me.
-Strengthen me to flee temptation
-and to walk in holiness before You.
-Amen.""",
-    "Prayer for Protection": """\
-O Lord, be before me and behind me,
-above me and beneath me.
-Cover me with Your mercy,
-and keep me from every evil.
-Amen.""",
-    "Prayer for Mercy": "Lord, have mercy. Christ, have mercy. Lord, have mercy.",
+            "ar": """بين يديك يا رب أستودع روحي.
+احفظني في هذه الليلة وامنحني سلامك.
+اغفر خطاياي وجدد قلبي ليوم جديد.
+آمين.""",
+            "pt": """Em Tuas mãos, ó Senhor, entrego o meu espírito.
+Guarda-me durante a noite e concede-me a Tua paz.
+Perdoa os meus pecados e renova o meu coração para um novo dia.
+Amém.""",
+        },
+    },
+    "morning_offering": {
+        "title": {"en": "Morning Offering", "ar": "تقدمة الصباح", "pt": "Oferecimento da Manhã"},
+        "text": {
+            "en": "Lord Jesus Christ, I offer You this day: my thoughts, words, works, and all I am. Guide me in purity, love, and truth. Amen.",
+            "ar": "يا رب يسوع المسيح، أقدم لك هذا اليوم: أفكاري وكلماتي وأعمالي وكل كياني. قُدني في الطهارة والمحبة والحق. آمين.",
+            "pt": "Senhor Jesus Cristo, eu Te ofereço este dia: meus pensamentos, palavras, obras e tudo o que sou. Guia-me na pureza, no amor e na verdade. Amém.",
+        },
+    },
+    "thanksgiving": {
+        "title": {"en": "Prayer of Thanksgiving", "ar": "صلاة الشكر", "pt": "Oração de Ação de Graças"},
+        "text": {
+            "en": "We thank You, our compassionate Father, for You have guarded us, helped us, and accepted us. Take us in Your holy fear and grant us Your peace. Amen.",
+            "ar": "نشكرك أيها الآب المتحنن لأنك سترتنا وأعنتنا وقبلتنا. اجعلنا في مخافتك المقدسة وامنحنا سلامك. آمين.",
+            "pt": "Nós Te agradecemos, nosso Pai compassivo, porque nos guardaste, nos ajudaste e nos aceitaste. Recebe-nos no Teu santo temor e concede-nos a Tua paz. Amém.",
+        },
+    },
+    "purity": {
+        "title": {"en": "Prayer for Purity", "ar": "صلاة من أجل الطهارة", "pt": "Oração pela Pureza"},
+        "text": {
+            "en": "Create in me a clean heart, O God, and renew a right spirit within me. Strengthen me to flee temptation and to walk in holiness before You. Amen.",
+            "ar": "قلبًا نقيًا اخلق فيّ يا الله، وروحًا مستقيمًا جدده في داخلي. قوّني أن أهرب من التجربة وأسلك في القداسة أمامك. آمين.",
+            "pt": "Cria em mim um coração puro, ó Deus, e renova em mim um espírito reto. Fortalece-me para fugir da tentação e andar em santidade diante de Ti. Amém.",
+        },
+    },
+    "protection": {
+        "title": {"en": "Prayer for Protection", "ar": "صلاة للحماية", "pt": "Oração de Proteção"},
+        "text": {
+            "en": "O Lord, be before me and behind me, above me and beneath me. Cover me with Your mercy, and keep me from every evil. Amen.",
+            "ar": "يا رب، كن أمامي وخلفي وفوقي وتحتي. ظللني برحمتك واحفظني من كل شر. آمين.",
+            "pt": "Ó Senhor, sê diante de mim e atrás de mim, acima e abaixo de mim. Cobre-me com a Tua misericórdia e guarda-me de todo mal. Amém.",
+        },
+    },
+    "mercy": {
+        "title": {"en": "Prayer for Mercy", "ar": "صلاة من أجل الرحمة", "pt": "Oração por Misericórdia"},
+        "text": {
+            "en": "Lord, have mercy. Christ, have mercy. Lord, have mercy.",
+            "ar": "يا رب ارحم. يا مسيح ارحم. يا رب ارحم.",
+            "pt": "Senhor, tem piedade. Cristo, tem piedade. Senhor, tem piedade.",
+        },
+    },
 }
 
 def _api_get_json(url: str) -> dict:
@@ -262,6 +362,37 @@ def normalize_book_key(text: str) -> str:
     return "".join(ch for ch in text.lower() if ch.isalnum())
 
 
+def prayer_locale_from_version(version: str) -> str:
+    if version == "arb-kehm":
+        return "ar"
+    if version == "almeida":
+        return "pt"
+    return "en"
+
+
+def prayer_title(prayer_key: str, locale: str = "en") -> str:
+    entry = PRAYERS.get(prayer_key, {})
+    titles = entry.get("title", {})
+    return titles.get(locale, titles.get("en", prayer_key))
+
+
+def prayer_text(prayer_key: str, locale: str = "en") -> str:
+    entry = PRAYERS.get(prayer_key, {})
+    texts = entry.get("text", {})
+    return texts.get(locale, texts.get("en", ""))
+
+
+def resolve_prayer_key(query: str) -> str:
+    normalized = query.strip().lower()
+    if normalized in PRAYERS:
+        return normalized
+    for key in PRAYER_ORDER:
+        for locale in ("en", "ar", "pt"):
+            if prayer_title(key, locale).lower() == normalized:
+                return key
+    return ""
+
+
 def fetch_verse(reference: str, translation: str = "kjv") -> dict:
     """Fetch a Bible verse from bible-api.com (free, no API key needed)."""
     encoded_ref = urllib.parse.quote(reference)
@@ -361,13 +492,15 @@ def print_verse(verse_data: dict):
     print()
 
 
-def print_prayer(prayer_name: str):
-    text = PRAYERS.get(prayer_name)
-    if not text:
-        print(c("gray", f"  ⚠  Prayer not found: {prayer_name}"))
+def print_prayer(prayer_query: str, locale: str = "en"):
+    key = resolve_prayer_key(prayer_query)
+    if not key:
+        print(c("gray", f"  ⚠  Prayer not found: {prayer_query}"))
         return
+    title = prayer_title(key, locale)
+    text = prayer_text(key, locale)
     print()
-    print(c("gold", "  ✝  ") + c("bold", prayer_name))
+    print(c("gold", "  ✝  ") + c("bold", title))
     print(c("gray", "  " + "─" * 50))
     for raw_line in text.splitlines():
         print(c("blue", "  " + raw_line))
@@ -415,13 +548,13 @@ def terminal_mode(args):
 
     if args[0] == "--prayers":
         print(c("green", "  Built-in prayers:"))
-        for name in PRAYERS:
-            print(c("gray", f"    - {name}"))
+        for key in PRAYER_ORDER:
+            print(c("gray", f"    - {prayer_title(key, 'en')}"))
         print()
         return
 
     if args[0] == "--coptic-3pm":
-        print_prayer("Coptic Orthodox — Sixth Hour (3 PM)")
+        print_prayer("coptic_sixth_hour_3pm", "en")
         return
 
     if args[0] == "--prayer":
@@ -429,7 +562,7 @@ def terminal_mode(args):
             print(c("gray", "  ⚠  Please pass a prayer name. Example: bible --prayer \"The Lord's Prayer\""))
             return
         prayer_name = " ".join(args[1:])
-        print_prayer(prayer_name)
+        print_prayer(prayer_name, "en")
         return
 
     # Check for -l / --language flag
@@ -480,7 +613,7 @@ class BibleApp(tk.Tk):
         self.current_translation = tk.StringVar(value=ORTHODOX_LANGUAGES[DEFAULT_GUI_LANGUAGE]["version"])
         self.current_lang_name   = tk.StringVar(value=DEFAULT_GUI_LANGUAGE)
         self.search_var          = tk.StringVar()
-        self.prayer_name_var     = tk.StringVar(value="Coptic Orthodox — Sixth Hour (3 PM)")
+        self.prayer_name_var     = tk.StringVar(value="")
         self.current_book        = tk.StringVar(value="")
         self.current_chapter     = tk.IntVar(value=1)
         self.verse_history       = []
@@ -488,6 +621,7 @@ class BibleApp(tk.Tk):
         self.books_cache         = {}
         self.chapters_cache      = {}
         self.book_display_to_slug = {}
+        self.prayer_display_to_key = {}
 
         self._build_ui()
         self.after(200, self.load_random)
@@ -537,7 +671,7 @@ class BibleApp(tk.Tk):
         self.prayer_combo = ttk.Combobox(
             prayer_frame,
             textvariable=self.prayer_name_var,
-            values=list(PRAYERS.keys()),
+            values=[],
             width=40,
             state="readonly",
             font=self.small_font
@@ -617,6 +751,7 @@ class BibleApp(tk.Tk):
                               anchor="w", padx=12, pady=4)
         status_bar.pack(fill="x", side="bottom")
 
+        self._refresh_prayers_for_current_language()
         self._load_books_for_current_language()
 
     # ── Actions ─────────────────────────────────
@@ -625,11 +760,25 @@ class BibleApp(tk.Tk):
         name = self.current_lang_name.get()
         config = ORTHODOX_LANGUAGES.get(name, ORTHODOX_LANGUAGES[DEFAULT_GUI_LANGUAGE])
         self.current_translation.set(config["version"])
+        self._refresh_prayers_for_current_language()
         self._load_books_for_current_language()
 
     def _current_language_config(self):
         name = self.current_lang_name.get()
         return ORTHODOX_LANGUAGES.get(name, ORTHODOX_LANGUAGES[DEFAULT_GUI_LANGUAGE])
+
+    def _prayer_locale(self):
+        return prayer_locale_from_version(self.current_translation.get())
+
+    def _refresh_prayers_for_current_language(self):
+        locale = self._prayer_locale()
+        labels = [prayer_title(key, locale) for key in PRAYER_ORDER]
+        self.prayer_display_to_key = {label: key for label, key in zip(labels, PRAYER_ORDER)}
+        self.prayer_combo["values"] = labels
+        current_key = resolve_prayer_key(self.prayer_name_var.get())
+        if not current_key:
+            current_key = "coptic_sixth_hour_3pm"
+        self.prayer_name_var.set(prayer_title(current_key, locale))
 
     def _fetch_books_for_current_language(self, version: str):
         config = self._current_language_config()
@@ -798,13 +947,16 @@ class BibleApp(tk.Tk):
         self.verse_text.config(state="disabled")
 
     def show_selected_prayer(self):
-        name = self.prayer_name_var.get().strip()
-        text = PRAYERS.get(name, "")
-        if not text:
-            self._show_verse({"error": f"Prayer not found: {name}"})
+        label = self.prayer_name_var.get().strip()
+        key = self.prayer_display_to_key.get(label) or resolve_prayer_key(label)
+        if not key:
+            self._show_verse({"error": f"Prayer not found: {label}"})
             return
+        locale = self._prayer_locale()
+        text = prayer_text(key, locale)
+        title = prayer_title(key, locale)
         self._show_verse({
-            "reference": name,
+            "reference": title,
             "text": text,
             "translation": "Prayer",
         })

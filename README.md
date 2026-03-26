@@ -58,6 +58,7 @@ Click **Bible** in your start menu, or type `bible --gui` in terminal.
 - Click **🎲 Random** for a random verse in the current source
 - Type `John 3:16` and click **🔍 Look Up**
 - Use the **Prayer** dropdown (includes Coptic Orthodox Sixth Hour / 3 PM prayer)
+- Prayer names/text auto-switch with language (English / العربية / Português)
 
 ---
 
