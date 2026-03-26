@@ -60,6 +60,23 @@ RANDOM_VERSES = [
     "Acts 2:38", "Romans 3:23", "Romans 5:8", "1 John 4:8",
 ]
 
+BOOK_CHAPTERS = {
+    "Genesis": 50, "Exodus": 40, "Leviticus": 27, "Numbers": 36, "Deuteronomy": 34,
+    "Joshua": 24, "Judges": 21, "Ruth": 4, "1 Samuel": 31, "2 Samuel": 24,
+    "1 Kings": 22, "2 Kings": 25, "1 Chronicles": 29, "2 Chronicles": 36, "Ezra": 10,
+    "Nehemiah": 13, "Esther": 10, "Job": 42, "Psalms": 150, "Proverbs": 31,
+    "Ecclesiastes": 12, "Song of Solomon": 8, "Isaiah": 66, "Jeremiah": 52, "Lamentations": 5,
+    "Ezekiel": 48, "Daniel": 12, "Hosea": 14, "Joel": 3, "Amos": 9,
+    "Obadiah": 1, "Jonah": 4, "Micah": 7, "Nahum": 3, "Habakkuk": 3,
+    "Zephaniah": 3, "Haggai": 2, "Zechariah": 14, "Malachi": 4, "Matthew": 28,
+    "Mark": 16, "Luke": 24, "John": 21, "Acts": 28, "Romans": 16,
+    "1 Corinthians": 16, "2 Corinthians": 13, "Galatians": 6, "Ephesians": 6, "Philippians": 4,
+    "Colossians": 4, "1 Thessalonians": 5, "2 Thessalonians": 3, "1 Timothy": 6, "2 Timothy": 4,
+    "Titus": 3, "Philemon": 1, "Hebrews": 13, "James": 5, "1 Peter": 5,
+    "2 Peter": 3, "1 John": 5, "2 John": 1, "3 John": 1, "Jude": 1, "Revelation": 22
+}
+
+
 def fetch_verse(reference: str, translation: str = "kjv") -> dict:
     """Fetch a Bible verse from bible-api.com (free, no API key needed)."""
     encoded_ref = urllib.parse.quote(reference)
@@ -73,7 +90,12 @@ def fetch_verse(reference: str, translation: str = "kjv") -> dict:
         verses = data.get("verses", [])
         text = " ".join(v["text"].strip() for v in verses)
         ref = data.get("reference", reference)
-        return {"reference": ref, "text": text, "translation": translation.upper()}
+        return {
+            "reference": ref,
+            "text": text,
+            "translation": translation.upper(),
+            "verses": verses,
+        }
     except Exception as e:
         return {"error": f"Could not connect: {e}"}
 
@@ -213,7 +235,10 @@ class BibleApp(tk.Tk):
         self.current_translation = tk.StringVar(value="kjv")
         self.current_lang_name   = tk.StringVar(value="English (KJV)")
         self.search_var          = tk.StringVar()
+        self.current_book        = tk.StringVar(value="John")
+        self.current_chapter     = tk.IntVar(value=3)
         self.verse_history       = []
+        self.chapter_verses      = []
 
         self._build_ui()
         self.after(200, self.load_random)
@@ -255,9 +280,56 @@ class BibleApp(tk.Tk):
         tk.Button(search_frame, text="🔍 Look Up",  command=self.search_verse, **btn_style).pack(side="left", padx=4)
         tk.Button(search_frame, text="🎲 Random",   command=self.load_random,  **btn_style).pack(side="left", padx=4)
 
+        # Browse controls (book -> chapter -> verses)
+        browse_header = tk.Frame(self, bg="#0a2342", pady=6, padx=16)
+        browse_header.pack(fill="x")
+        tk.Label(browse_header, text="Browse:", bg="#0a2342", fg="#dce0ff",
+                 font=self.small_font).pack(side="left", padx=(0, 6))
+        self.book_combo = ttk.Combobox(
+            browse_header,
+            textvariable=self.current_book,
+            values=list(BOOK_CHAPTERS.keys()),
+            width=20,
+            state="readonly",
+            font=self.small_font
+        )
+        self.book_combo.pack(side="left", padx=(0, 6))
+        self.book_combo.bind("<<ComboboxSelected>>", self._on_book_change)
+
+        tk.Label(browse_header, text="Chapter:", bg="#0a2342", fg="#dce0ff",
+                 font=self.small_font).pack(side="left", padx=(6, 4))
+        self.chapter_spin = tk.Spinbox(
+            browse_header, from_=1, to=150, textvariable=self.current_chapter,
+            width=5, font=self.small_font, command=self.load_chapter
+        )
+        self.chapter_spin.pack(side="left", padx=(0, 6))
+        self.chapter_spin.bind("<Return>", lambda e: self.load_chapter())
+        self.chapter_spin.bind("<FocusOut>", lambda e: self.load_chapter())
+        tk.Button(browse_header, text="Load Chapter", command=self.load_chapter, **btn_style).pack(side="left")
+
+        # Main content split: verse list + verse display
+        content_frame = tk.Frame(self, bg="#1a1a2e")
+        content_frame.pack(fill="both", expand=True)
+
+        list_frame = tk.Frame(content_frame, bg="#101a35", padx=10, pady=10)
+        list_frame.pack(side="left", fill="y")
+        tk.Label(list_frame, text="Verses", bg="#101a35", fg="#f0c040",
+                 font=self.ref_font).pack(anchor="w", pady=(0, 6))
+        self.verse_list = tk.Listbox(
+            list_frame, width=36, height=18, bg="#0e1730", fg="#dce0ff",
+            relief="flat", highlightthickness=1, highlightbackground="#274060",
+            selectbackground="#f0c040", selectforeground="#1a1a2e",
+            font=self.small_font
+        )
+        self.verse_list.pack(side="left", fill="y")
+        self.verse_list.bind("<<ListboxSelect>>", self._on_verse_select)
+        verse_scroll = tk.Scrollbar(list_frame, orient="vertical", command=self.verse_list.yview)
+        verse_scroll.pack(side="left", fill="y")
+        self.verse_list.config(yscrollcommand=verse_scroll.set)
+
         # Verse display area
-        verse_frame = tk.Frame(self, bg="#1a1a2e", padx=30, pady=24)
-        verse_frame.pack(fill="both", expand=True)
+        verse_frame = tk.Frame(content_frame, bg="#1a1a2e", padx=24, pady=24)
+        verse_frame.pack(side="left", fill="both", expand=True)
 
         self.ref_label = tk.Label(verse_frame, text="", font=self.ref_font,
                                   bg="#1a1a2e", fg="#f0c040", anchor="w")
@@ -280,6 +352,8 @@ class BibleApp(tk.Tk):
                               anchor="w", padx=12, pady=4)
         status_bar.pack(fill="x", side="bottom")
 
+        self._on_book_change()
+
     # ── Actions ─────────────────────────────────
 
     def _on_lang_change(self, _event=None):
@@ -288,6 +362,81 @@ class BibleApp(tk.Tk):
             self.current_translation.set("arabic")
         else:
             self.current_translation.set(LANGUAGES.get(name, {}).get("id", "kjv"))
+        self.load_chapter()
+
+    def _on_book_change(self, _event=None):
+        book = self.current_book.get()
+        max_ch = BOOK_CHAPTERS.get(book, 1)
+        current = self.current_chapter.get()
+        if current < 1:
+            current = 1
+        if current > max_ch:
+            current = max_ch
+        self.current_chapter.set(current)
+        self.chapter_spin.config(to=max_ch)
+        self.load_chapter()
+
+    def load_chapter(self):
+        book = self.current_book.get().strip()
+        chapter = self.current_chapter.get()
+        if not book:
+            return
+
+        self.verse_list.delete(0, "end")
+        self.chapter_verses = []
+        trans = self.current_translation.get()
+
+        if trans == "arabic":
+            self.status_var.set("Arabic browse mode is offline only (limited sample verses).")
+            self.ref_label.config(text=f"{book} {chapter} [عربي]")
+            self.verse_text.config(state="normal")
+            self.verse_text.delete("1.0", "end")
+            self.verse_text.insert("end", "Arabic browse mode is limited offline.\nUse search for included Arabic verses.")
+            self.verse_text.config(state="disabled")
+            return
+
+        self.status_var.set(f"Loading {book} {chapter}...")
+        self.update()
+        data = fetch_verse(f"{book} {chapter}", trans)
+        if "error" in data:
+            self.status_var.set("Could not load chapter.")
+            self.ref_label.config(text="⚠ Error")
+            self.verse_text.config(state="normal")
+            self.verse_text.delete("1.0", "end")
+            self.verse_text.insert("end", data["error"])
+            self.verse_text.config(state="disabled")
+            return
+
+        verses = data.get("verses", [])
+        if not verses:
+            self.status_var.set("No verses found for this chapter.")
+            return
+
+        self.chapter_verses = verses
+        for verse in verses:
+            number = verse.get("verse", "?")
+            text = verse.get("text", "").strip().replace("\n", " ")
+            preview = text[:72] + ("..." if len(text) > 72 else "")
+            self.verse_list.insert("end", f"{number}. {preview}")
+
+        self.status_var.set(f"Loaded {book} {chapter} ({len(verses)} verses)")
+        self.verse_list.selection_set(0)
+        self._on_verse_select()
+
+    def _on_verse_select(self, _event=None):
+        if not self.chapter_verses:
+            return
+        selected = self.verse_list.curselection()
+        if not selected:
+            return
+        verse_data = self.chapter_verses[selected[0]]
+        ref = f"{verse_data.get('book_name', self.current_book.get())} {verse_data.get('chapter', self.current_chapter.get())}:{verse_data.get('verse', '?')}"
+        text = verse_data.get("text", "").strip()
+        self._show_verse({
+            "reference": ref,
+            "text": text,
+            "translation": self.current_translation.get().upper()
+        })
 
     def _show_verse(self, data: dict):
         self.verse_text.config(state="normal")
