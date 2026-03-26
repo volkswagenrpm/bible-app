@@ -371,7 +371,7 @@ class BibleApp(tk.Tk):
         self.book_combo = ttk.Combobox(
             browse_header,
             textvariable=self.current_book,
-            values=list(BOOK_CHAPTERS.keys()),
+            values=[],
             width=20,
             state="readonly",
             font=self.small_font
